@@ -4,6 +4,8 @@ PowerToys-Run-Plugin für Gemini über Antigravity CLI, Claude Code und Codex CL
 
 Die vorhandenen Konto-Anmeldungen der lokalen CLIs werden verwendet. Das Plugin benötigt keine eigenen API-Schlüssel und wechselt nicht automatisch auf API-Abrechnung.
 
+![AI Hub mit drei parallelen Antworten in PowerToys Run](docs/aihub-powertoys-run.png)
+
 ## Getesteter Stand vom 17. Oktober 2026
 
 - PowerToys: `0.101.2362.0`
