@@ -46,7 +46,7 @@ public sealed class Main : IPlugin
                 Title = mode == "all" ? "Frage an alle drei eingeben" : $"Frage an {Labels[mode]} eingeben",
                 SubTitle = "Tippen startet noch keine Anfrage.",
                 Score = ResultScore,
-                IcoPath = mode == "all" ? "Images/icon.png" : ProviderIcon(mode)
+                IcoPath = ModeIcon(mode)
             }];
         }
 
@@ -70,7 +70,7 @@ public sealed class Main : IPlugin
         Title = title,
         SubTitle = example,
         Score = ResultScore,
-        IcoPath = provider is null ? "Images/icon.png" : ProviderIcon(provider)
+        IcoPath = provider is null ? "Images/all.png" : ProviderIcon(provider)
     };
 
     Result CreateSendResult(string key, string mode, string prompt, string rawQuery) => new()
@@ -78,7 +78,7 @@ public sealed class Main : IPlugin
         Title = mode == "all" ? "An alle drei senden" : $"An {Labels[mode]} senden",
         SubTitle = prompt,
         Score = ResultScore,
-        IcoPath = mode == "all" ? "Images/icon.png" : ProviderIcon(mode),
+        IcoPath = ModeIcon(mode),
         Action = _ =>
         {
             StartRequest(key, mode, prompt, rawQuery);
@@ -117,7 +117,7 @@ public sealed class Main : IPlugin
                 Title = "Abbrechen",
                 SubTitle = "Beendet alle laufenden Anbieter dieser Anfrage.",
                 Score = ResultScore,
-                IcoPath = "Images/icon.png",
+                IcoPath = ModeIcon(state.Mode),
                 Action = _ =>
                 {
                     Cancel(state, rawQuery);
@@ -132,7 +132,7 @@ public sealed class Main : IPlugin
                 Title = "Neue Frage eingeben",
                 SubTitle = "Die abgebrochene Anfrage wird nicht als Kontext übernommen.",
                 Score = ResultScore,
-                IcoPath = "Images/icon.png",
+                IcoPath = ModeIcon(state.Mode),
                 Action = _ =>
                 {
                     api?.ChangeQuery(CommandPrefix(state.Mode), false);
@@ -147,7 +147,7 @@ public sealed class Main : IPlugin
                 Title = state.Mode == "all" ? "Gemeinsame Rückfrage stellen" : $"Rückfrage an {Labels[state.Mode]} stellen",
                 SubTitle = "Übernimmt den bisherigen Gesprächskontext.",
                 Score = ResultScore,
-                IcoPath = "Images/icon.png",
+                IcoPath = ModeIcon(state.Mode),
                 Action = _ =>
                 {
                     PrepareContinuation(state);
@@ -302,6 +302,7 @@ public sealed class Main : IPlugin
         string.Join(" ", text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
 
     static string CommandPrefix(string mode) => mode == "all" ? "@ all " : $"@{mode} ";
+    static string ModeIcon(string mode) => mode == "all" ? "Images/all.png" : ProviderIcon(mode);
     static string ProviderIcon(string provider) => $"Images/{provider}.png";
 
     void StartRequest(string key, string mode, string prompt, string rawQuery)

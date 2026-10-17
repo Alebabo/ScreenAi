@@ -27,7 +27,7 @@ internal static class Program
         }
 
         var choices = plugin.Query(new Query("@", "@"));
-        if (choices.Count != 4 || choices.Any(result => result.Action is not null))
+        if (choices.Count != 4 || choices.Any(result => result.Action is not null) || choices[3].IcoPath != "Images/all.png")
         {
             throw new InvalidOperationException("Anbieterauswahl ist unerwartet.");
         }
@@ -48,7 +48,7 @@ internal static class Program
         }
 
         var inlineResult = plugin.Query(new Query("@ all Noch nicht senden", "@"));
-        if (inlineResult.Count != 1 || inlineResult[0].Action is null || inlineResult[0].Title != "An alle drei senden")
+        if (inlineResult.Count != 1 || inlineResult[0].Action is null || inlineResult[0].Title != "An alle drei senden" || inlineResult[0].IcoPath != "Images/all.png")
         {
             throw new InvalidOperationException("Parallelanfrage erzeugt kein Inline-Senden-Ergebnis.");
         }
