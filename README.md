@@ -1,6 +1,6 @@
 # AI Hub für PowerToys Run
 
-PowerToys-Run-Plugin für Gemini über Antigravity CLI, Claude Code und Codex CLI. Version 0.6.1 zeigt Status und Antworten direkt unter der PowerToys-Eingabe. Es öffnet kein separates Chatfenster.
+PowerToys-Run-Plugin für Gemini über Antigravity CLI, Claude Code und Codex CLI. Version 0.7.0 zeigt Status und Antworten direkt unter der PowerToys-Eingabe. Es öffnet kein separates Chatfenster.
 
 Die vorhandenen Konto-Anmeldungen der lokalen CLIs werden verwendet. Das Plugin benötigt keine eigenen API-Schlüssel und wechselt nicht automatisch auf API-Abrechnung.
 
@@ -16,14 +16,15 @@ Die vorhandenen Konto-Anmeldungen der lokalen CLIs werden verwendet. Das Plugin 
 - Claude Code: `2.1.302`
 - Codex CLI: `0.150.1`
 - Installation: `%LOCALAPPDATA%\Microsoft\PowerToys\PowerToys Run\Plugins\AIHub`
-- PowerToys: AI Hub `0.6.1.0`, aktiviert, erfolgreich geladen
+- PowerToys: AI Hub `0.7.0.0`, aktiviert, erfolgreich geladen
 
 Erfolgreich geprüft:
 
 - Build gegen die echte lokale `Wox.Plugin.dll`: 0 Warnungen, 0 Fehler.
-- Vier Bridge-Unit-Tests bestanden.
+- Fünf Bridge-Unit-Tests bestanden.
 - 1.000 PowerToys-Abfragen starteten vor Enter keinen Modellprozess.
 - Echter Inline-Paralleltest: drei erfolgreiche Antworten und eine gemeinsame Rückfragezeile.
+- Echter Aufklapptest mit langer Codex-Antwort: erstes Enter klappt inline auf, zweites Enter kopiert vollständig.
 - Gemini/Antigravity, Claude-Abo und Codex/ChatGPT wurden real aufgerufen.
 - Unicode, Textkontext für Rückfragen und Beenden ganzer Prozessbäume sind implementiert.
 
@@ -51,9 +52,11 @@ Während des Tippens erscheint nur **Senden**. Erst Enter startet die Anfrage. P
 - Anbieterzeilen zeigen das jeweilige Gemini-, Claude-Code- oder Codex-Logo.
 - Während der Anfrage: zusätzliche Zeile **Abbrechen**.
 - Nach Abschluss: zusätzliche Zeile **Rückfrage stellen**. Sie übernimmt den bisherigen Kontext.
-- Enter auf einer Antwort kopiert den vollständigen Text. Darüberfahren zeigt den Volltext als Tooltip.
+- Kurze Antwort: Enter kopiert den vollständigen Text.
+- Lange Antwort: erstes Enter klappt sie unter der Eingabe seitenweise auf; zweites Enter kopiert den vollständigen Text.
+- In der aufgeklappten Ansicht blättern **Nächste Seite** und **Zurück zur Ergebnisübersicht**. Darüberfahren zeigt weiterhin den Volltext als Tooltip.
 
-PowerToys Run kann Ergebnisse nur als Liste darstellen. Eine echte Drei-Spalten-Ansicht und lange Fließtexte im Hauptbereich sind dort nicht möglich. Deshalb werden lange Antworten in der Zeile gekürzt; der vollständige Text bleibt im Tooltip und in der Zwischenablage verfügbar. Token-Streaming wird nicht angezeigt.
+PowerToys Run kann Ergebnisse nur als Liste darstellen. Eine echte Drei-Spalten-Ansicht ist dort nicht möglich. Lange Antworten werden deshalb zunächst gekürzt und nach dem ersten Enter in mehrere Listenzeilen aufgeteilt. Token-Streaming wird nicht angezeigt.
 
 ## Anmeldung
 
@@ -83,7 +86,7 @@ PowerToys vollständig beenden, dann:
 .\Build.ps1 -Install
 ```
 
-Das Skript installiert den mitgelieferten, auf diesem Rechner getesteten v0.5-Build. Danach PowerToys starten. AI Hub muss unter **PowerToys Run → Plugins** aktiviert sein. AI Hub verwendet `@`. Um die Aktivierungskollision zu vermeiden, ändert das Installationsskript das direkte Aktivierungswort des eingebauten PowerToys-Plugins von `@` zu `pt`, sofern es noch `@` verwendet.
+Das Skript installiert den mitgelieferten, auf diesem Rechner getesteten v0.7-Build. Danach PowerToys starten. AI Hub muss unter **PowerToys Run → Plugins** aktiviert sein. AI Hub verwendet `@`. Um die Aktivierungskollision zu vermeiden, ändert das Installationsskript das direkte Aktivierungswort des eingebauten PowerToys-Plugins von `@` zu `pt`, sofern es noch `@` verwendet.
 
 Aus dem aktuellen Quellcode bauen:
 
@@ -112,7 +115,7 @@ Echter Inline-Test aller drei Anbieter:
 
 ## ZIP-Inhalt
 
-Das Archiv enthält Quellcode, Tests und `AIHub\dist\AIHub` mit dem installierbaren v0.6-Build.
+Das Archiv enthält Quellcode, Tests und `AIHub\dist\AIHub` mit dem installierbaren v0.7-Build.
 
 Die Anbieterlogos stammen aus [LobeHub Icons](https://github.com/lobehub/lobe-icons) und bleiben Marken ihrer jeweiligen Eigentümer.
 

@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Reflection;
+using System.Windows;
 using Community.PowerToys.Run.Plugin.AIHub;
 using Wox.Plugin;
 
@@ -59,9 +60,20 @@ internal static class Program
             throw new InvalidOperationException($"Tippen oder Chatfenster startete unerwartete Prozesse: {string.Join(", ", started)}");
         }
 
-        Console.WriteLine("Query-Smoke-Test bestanden: 1000 Eingaben, Inline-Senden für Parallelmodus, 0 Modellprozesse vor Enter.");
+        var longUnbroken = new string('X', 500);
+        var chunks = Community.PowerToys.Run.Plugin.AIHub.Main.SplitForDisplay(longUnbroken);
+        if (chunks.Count != 6 || chunks.Any(chunk => chunk.Length > 90) || string.Concat(chunks) != longUnbroken)
+        {
+            throw new InvalidOperationException("Lange Antworten werden nicht verlustfrei in sichtbare Abschnitte geteilt.");
+        }
 
-        if (args.Contains("--live")) RunLiveInlineTest();
+        Console.WriteLine("Query-Smoke-Test bestanden: 1000 Eingaben, Inline-Senden, Aufteilung langer Antworten, 0 Modellprozesse vor Enter.");
+
+        if (args.Contains("--live"))
+        {
+            RunLiveInlineTest();
+            RunLiveExpandTest();
+        }
     }
 
     static void RunLiveInlineTest()
@@ -96,6 +108,49 @@ internal static class Program
             throw new InvalidOperationException("PowerToys wurde nach dem Senden nicht zur Neuabfrage gezwungen.");
         }
         Console.WriteLine("Live-Inline-Test bestanden: drei Antworten plus gemeinsame Rückfrage direkt als PowerToys-Ergebnisse.");
+    }
+
+    static void RunLiveExpandTest()
+    {
+        NoOpApiProxy.ForcedRequeries = 0;
+        var plugin = new Main();
+        plugin.Init(new PluginInitContext { API = DispatchProxy.Create<IPublicAPI, NoOpApiProxy>() });
+        var query = new Query("@codex Antworte exakt mit 400 aufeinanderfolgenden Zeichen X, ohne Leerzeichen, Markdown oder Erklärung.", "@");
+        var send = plugin.Query(query).Single();
+        if (send.Action is null || send.Action(null!)) throw new InvalidOperationException("Testanfrage für lange Antwort konnte nicht gestartet werden.");
+
+        var deadline = DateTime.UtcNow.AddSeconds(45);
+        List<Result> results;
+        do
+        {
+            Thread.Sleep(250);
+            results = plugin.Query(query);
+        }
+        while (DateTime.UtcNow < deadline && results.Any(result => result.Title.Contains("läuft", StringComparison.OrdinalIgnoreCase)));
+
+        var answer = results.FirstOrDefault();
+        if (answer?.Action is null || !answer.Title.EndsWith('…'))
+        {
+            throw new InvalidOperationException("Live-Test lieferte keine lange, aufklappbare Antwort: " + string.Join(" | ", results.Select(result => result.Title)));
+        }
+
+        const string marker = "AIHub-expand-test-marker";
+        Clipboard.SetText(marker);
+        if (answer.Action(null!)) throw new InvalidOperationException("Erstes Enter schloss PowerToys unerwartet.");
+        if (Clipboard.GetText() != marker) throw new InvalidOperationException("Erstes Enter kopierte statt aufzuklappen.");
+
+        var expanded = plugin.Query(query);
+        if (expanded.Count != 4 || !expanded[0].Title.Contains("Antwort ausgeklappt", StringComparison.Ordinal) || expanded.Take(3).Any(result => result.Action is null))
+        {
+            throw new InvalidOperationException("Lange Antwort wurde nicht als stabile Inline-Ansicht aufgeklappt.");
+        }
+        if (expanded[0].Action!(null!)) throw new InvalidOperationException("Zweites Enter schloss PowerToys unerwartet.");
+        var copied = Clipboard.GetText();
+        if (copied == marker || copied.Length <= 260)
+        {
+            throw new InvalidOperationException("Zweites Enter kopierte nicht die vollständige lange Antwort.");
+        }
+        Console.WriteLine("Live-Aufklapptest bestanden: erstes Enter klappt inline auf, zweites Enter kopiert vollständig.");
     }
 
     public class NoOpApiProxy : DispatchProxy

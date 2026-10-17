@@ -11,6 +11,9 @@ namespace Community.PowerToys.Run.Plugin.AIHub;
 public sealed class Main : IPlugin
 {
     const int ResultScore = 1_000_000;
+    const int CompactAnswerLimit = 260;
+    const int ExpandedChunkLimit = 90;
+    const int ExpandedChunksPerPage = 2;
     static readonly string[] AllProviders = ["gemini", "claude", "codex"];
     static readonly Dictionary<string, string> Labels = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -87,6 +90,7 @@ public sealed class Main : IPlugin
     {
         List<ProviderSnapshot> snapshots;
         bool completed;
+        string? expandedProvider;
         lock (sync)
         {
             snapshots = state.Providers.Select(provider => new ProviderSnapshot(
@@ -94,9 +98,18 @@ public sealed class Main : IPlugin
                 state.Results[provider].Status,
                 state.Results[provider].Text)).ToList();
             completed = state.Completed;
+            expandedProvider = state.ExpandedProvider;
         }
 
-        var results = snapshots.Select(ProviderResult).ToList();
+        if (expandedProvider is not null)
+        {
+            var expanded = snapshots.FirstOrDefault(snapshot =>
+                snapshot.Status == ProviderStatus.Succeeded &&
+                snapshot.Provider.Equals(expandedProvider, StringComparison.OrdinalIgnoreCase));
+            if (expanded is not null) return ExpandedResults(state, expanded, rawQuery);
+        }
+
+        var results = snapshots.Select(snapshot => ProviderResult(state, snapshot, rawQuery)).ToList();
         if (!completed)
         {
             results.Add(new Result
@@ -146,39 +159,147 @@ public sealed class Main : IPlugin
         return results;
     }
 
-    static Result ProviderResult(ProviderSnapshot snapshot)
+    Result ProviderResult(RequestState state, ProviderSnapshot snapshot, string rawQuery)
     {
         var label = Labels[snapshot.Provider];
         var text = snapshot.Text;
+        var compactText = Compact(text, CompactAnswerLimit);
+        var isLong = snapshot.Status == ProviderStatus.Succeeded && Normalize(text).Length > CompactAnswerLimit;
         var title = snapshot.Status switch
         {
             ProviderStatus.Running => $"{label}: Anfrage läuft …",
             ProviderStatus.Canceled => $"{label}: Abgebrochen",
             ProviderStatus.Failed => $"{label}: Fehler — {Compact(text, 220)}",
-            _ => $"{label}: {Compact(text, 260)}"
+            _ => $"{label}: {compactText}"
         };
         return new Result
         {
             Title = title,
             SubTitle = snapshot.Status == ProviderStatus.Succeeded
-                ? "Enter kopiert die vollständige Antwort. Darüberfahren zeigt den Volltext."
+                ? isLong
+                    ? "Enter klappt die vollständige Antwort auf. Darüberfahren zeigt den Volltext."
+                    : "Enter kopiert die vollständige Antwort. Darüberfahren zeigt den Volltext."
                 : text,
             Score = ResultScore,
             ToolTipData = string.IsNullOrWhiteSpace(text) ? null : new ToolTipData(label, text),
             IcoPath = ProviderIcon(snapshot.Provider),
             Action = snapshot.Status == ProviderStatus.Succeeded ? _ =>
             {
-                try { Clipboard.SetText(text); } catch { }
+                if (isLong)
+                {
+                    lock (sync)
+                    {
+                        state.ExpandedProvider = snapshot.Provider;
+                        state.ExpandedPage = 0;
+                    }
+                    api?.ChangeQuery(rawQuery, true);
+                }
+                else
+                {
+                    CopyToClipboard(text);
+                }
                 return false;
             } : null
         };
     }
 
+    List<Result> ExpandedResults(RequestState state, ProviderSnapshot snapshot, string rawQuery)
+    {
+        var label = Labels[snapshot.Provider];
+        var chunks = SplitForDisplay(snapshot.Text, ExpandedChunkLimit);
+        var totalPages = Math.Max(1, (int)Math.Ceiling(chunks.Count / (double)ExpandedChunksPerPage));
+        int page;
+        lock (sync)
+        {
+            state.ExpandedPage = Math.Clamp(state.ExpandedPage, 0, totalPages - 1);
+            page = state.ExpandedPage;
+        }
+
+        Func<ActionContext, bool> copy = _ =>
+        {
+            CopyToClipboard(snapshot.Text);
+            return false;
+        };
+        var results = new List<Result>
+        {
+            new()
+            {
+                Title = $"{label}: Antwort ausgeklappt",
+                SubTitle = $"Enter kopiert vollständig · Seite {page + 1}/{totalPages}",
+                Score = ResultScore,
+                ToolTipData = new ToolTipData(label, snapshot.Text),
+                IcoPath = ProviderIcon(snapshot.Provider),
+                Action = copy
+            }
+        };
+
+        var firstChunk = page * ExpandedChunksPerPage;
+        foreach (var (chunk, offset) in chunks.Skip(firstChunk).Take(ExpandedChunksPerPage).Select((chunk, offset) => (chunk, offset)))
+        {
+            results.Add(new Result
+            {
+                Title = chunk,
+                SubTitle = $"Teil {firstChunk + offset + 1}/{chunks.Count} · Enter kopiert die vollständige Antwort.",
+                Score = ResultScore - offset - 1,
+                ToolTipData = new ToolTipData(label, snapshot.Text),
+                IcoPath = ProviderIcon(snapshot.Provider),
+                Action = copy
+            });
+        }
+
+        var hasNextPage = page + 1 < totalPages;
+        results.Add(new Result
+        {
+            Title = hasNextPage ? "Nächste Seite" : "Zurück zur Ergebnisübersicht",
+            SubTitle = hasNextPage ? $"Zeigt Seite {page + 2}/{totalPages}." : "Zeigt wieder alle Anbieter.",
+            Score = ResultScore - ExpandedChunksPerPage - 1,
+            IcoPath = "Images/icon.png",
+            Action = _ =>
+            {
+                lock (sync)
+                {
+                    if (hasNextPage) state.ExpandedPage++;
+                    else
+                    {
+                        state.ExpandedProvider = null;
+                        state.ExpandedPage = 0;
+                    }
+                }
+                api?.ChangeQuery(rawQuery, true);
+                return false;
+            }
+        });
+        return results;
+    }
+
+    internal static List<string> SplitForDisplay(string text, int limit = ExpandedChunkLimit)
+    {
+        var remaining = Normalize(text);
+        var chunks = new List<string>();
+        while (remaining.Length > limit)
+        {
+            var cut = remaining.LastIndexOf(' ', limit);
+            if (cut < limit / 2) cut = limit;
+            chunks.Add(remaining[..cut].Trim());
+            remaining = remaining[cut..].TrimStart();
+        }
+        if (remaining.Length > 0) chunks.Add(remaining);
+        return chunks;
+    }
+
+    static void CopyToClipboard(string text)
+    {
+        try { Clipboard.SetText(text); } catch { }
+    }
+
     static string Compact(string text, int limit)
     {
-        var compact = string.Join(" ", text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+        var compact = Normalize(text);
         return compact.Length <= limit ? compact : compact[..(limit - 1)] + "…";
     }
+
+    static string Normalize(string text) =>
+        string.Join(" ", text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
 
     static string CommandPrefix(string mode) => mode == "all" ? "@ all " : $"@{mode} ";
     static string ProviderIcon(string provider) => $"Images/{provider}.png";
@@ -368,5 +489,7 @@ public sealed class Main : IPlugin
         public DateTime Created { get; } = DateTime.UtcNow;
         public bool Completed { get; set; }
         public bool Canceled { get; set; }
+        public string? ExpandedProvider { get; set; }
+        public int ExpandedPage { get; set; }
     }
 }
