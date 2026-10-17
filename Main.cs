@@ -200,7 +200,7 @@ public sealed class Main : IPlugin
                 if (old.Completed) requests.Remove(old.Key);
             }
         }
-        api?.ChangeQuery(rawQuery, false);
+        api?.ChangeQuery(rawQuery, true);
         _ = RunRequest(state);
     }
 
@@ -208,7 +208,7 @@ public sealed class Main : IPlugin
     {
         await Task.WhenAll(state.Providers.Select(provider => RunProvider(state, provider)));
         lock (sync) state.Completed = true;
-        api?.ChangeQuery(state.RawQuery, false);
+        api?.ChangeQuery(state.RawQuery, true);
     }
 
     async Task RunProvider(RequestState state, string provider)
@@ -289,7 +289,7 @@ public sealed class Main : IPlugin
         {
             lock (sync) state.Results[provider].Process = null;
             process?.Dispose();
-            api?.ChangeQuery(state.RawQuery, false);
+            api?.ChangeQuery(state.RawQuery, true);
         }
     }
 
@@ -320,7 +320,7 @@ public sealed class Main : IPlugin
             catch (InvalidOperationException) { }
             catch (Win32Exception) { }
         }
-        api?.ChangeQuery(rawQuery, false);
+        api?.ChangeQuery(rawQuery, true);
     }
 
     static string FindNode()

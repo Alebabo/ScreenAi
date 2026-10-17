@@ -66,6 +66,7 @@ internal static class Program
 
     static void RunLiveInlineTest()
     {
+        NoOpApiProxy.ForcedRequeries = 0;
         var plugin = new Main();
         plugin.Init(new PluginInitContext { API = DispatchProxy.Create<IPublicAPI, NoOpApiProxy>() });
         var query = new Query("@ all Antworte exakt mit dem Namen deines Anbieters", "@");
@@ -85,14 +86,26 @@ internal static class Program
         {
             throw new InvalidOperationException("Live-Paralleltest lieferte nicht drei erfolgreiche Inline-Antworten: " + string.Join(" | ", results.Select(result => result.Title)));
         }
+        if (NoOpApiProxy.ForcedRequeries == 0)
+        {
+            throw new InvalidOperationException("PowerToys wurde nach dem Senden nicht zur Neuabfrage gezwungen.");
+        }
         Console.WriteLine("Live-Inline-Test bestanden: drei Antworten plus gemeinsame Rückfrage direkt als PowerToys-Ergebnisse.");
     }
 
     public class NoOpApiProxy : DispatchProxy
     {
-        protected override object? Invoke(MethodInfo? targetMethod, object?[]? args) =>
-            targetMethod?.ReturnType != typeof(void) && targetMethod?.ReturnType.IsValueType == true
+        public static int ForcedRequeries;
+
+        protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
+        {
+            if (targetMethod?.Name == nameof(IPublicAPI.ChangeQuery) && args is { Length: > 1 } && args[1] is true)
+            {
+                Interlocked.Increment(ref ForcedRequeries);
+            }
+            return targetMethod?.ReturnType != typeof(void) && targetMethod?.ReturnType.IsValueType == true
                 ? Activator.CreateInstance(targetMethod.ReturnType)
                 : null;
+        }
     }
 }
