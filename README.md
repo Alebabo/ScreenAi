@@ -1,6 +1,6 @@
 # AI Hub für PowerToys Run
 
-PowerToys-Run-Plugin für Gemini über Antigravity CLI, Claude Code und Codex CLI. Version 0.6.0 zeigt Status und Antworten direkt unter der PowerToys-Eingabe. Es öffnet kein separates Chatfenster.
+PowerToys-Run-Plugin für Gemini über Antigravity CLI, Claude Code und Codex CLI. Version 0.6.1 zeigt Status und Antworten direkt unter der PowerToys-Eingabe. Es öffnet kein separates Chatfenster.
 
 Die vorhandenen Konto-Anmeldungen der lokalen CLIs werden verwendet. Das Plugin benötigt keine eigenen API-Schlüssel und wechselt nicht automatisch auf API-Abrechnung.
 
@@ -16,7 +16,7 @@ Die vorhandenen Konto-Anmeldungen der lokalen CLIs werden verwendet. Das Plugin 
 - Claude Code: `2.1.302`
 - Codex CLI: `0.150.1`
 - Installation: `%LOCALAPPDATA%\Microsoft\PowerToys\PowerToys Run\Plugins\AIHub`
-- PowerToys: AI Hub `0.6.0.0`, aktiviert, erfolgreich geladen
+- PowerToys: AI Hub `0.6.1.0`, aktiviert, erfolgreich geladen
 
 Erfolgreich geprüft:
 
@@ -48,6 +48,7 @@ Während des Tippens erscheint nur **Senden**. Erst Enter startet die Anfrage. P
 
 - Einzelmodus: eine Antwortzeile.
 - Parallelmodus: je eine Zeile für Gemini, Claude und Codex.
+- Anbieterzeilen zeigen das jeweilige Gemini-, Claude-Code- oder Codex-Logo.
 - Während der Anfrage: zusätzliche Zeile **Abbrechen**.
 - Nach Abschluss: zusätzliche Zeile **Rückfrage stellen**. Sie übernimmt den bisherigen Kontext.
 - Enter auf einer Antwort kopiert den vollständigen Text. Darüberfahren zeigt den Volltext als Tooltip.
@@ -111,7 +112,9 @@ Echter Inline-Test aller drei Anbieter:
 
 ## ZIP-Inhalt
 
-Das Archiv enthält Quellcode, Tests und `AIHub\dist\AIHub` mit dem installierbaren v0.5-Build.
+Das Archiv enthält Quellcode, Tests und `AIHub\dist\AIHub` mit dem installierbaren v0.6-Build.
+
+Die Anbieterlogos stammen aus [LobeHub Icons](https://github.com/lobehub/lobe-icons) und bleiben Marken ihrer jeweiligen Eigentümer.
 
 ## Offizielle Referenzen
 

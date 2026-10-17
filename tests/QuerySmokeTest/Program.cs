@@ -19,7 +19,7 @@ internal static class Program
         for (var index = 0; index < 1000; index++)
         {
             var results = plugin.Query(new Query($"@gemini Nur tippen {index} ÄÖÜ", "@"));
-            if (results.Count != 1 || results[0].Action is null || results[0].Score < 1_000_000)
+            if (results.Count != 1 || results[0].Action is null || results[0].Score < 1_000_000 || results[0].IcoPath != "Images/gemini.png")
             {
                 throw new InvalidOperationException("Gültige Eingabe erzeugt kein sichtbares, startbares Ergebnis.");
             }
@@ -85,6 +85,11 @@ internal static class Program
         if (results.Count != 4 || results.Take(3).Any(result => result.Title.Contains("Fehler", StringComparison.OrdinalIgnoreCase) || result.Title.Contains("läuft", StringComparison.OrdinalIgnoreCase)))
         {
             throw new InvalidOperationException("Live-Paralleltest lieferte nicht drei erfolgreiche Inline-Antworten: " + string.Join(" | ", results.Select(result => result.Title)));
+        }
+        var expectedIcons = new[] { "Images/gemini.png", "Images/claude.png", "Images/codex.png" };
+        if (!results.Take(3).Select(result => result.IcoPath).SequenceEqual(expectedIcons))
+        {
+            throw new InvalidOperationException("Anbieterantworten verwenden nicht die erwarteten Logos.");
         }
         if (NoOpApiProxy.ForcedRequeries == 0)
         {

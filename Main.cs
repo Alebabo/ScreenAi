@@ -43,7 +43,7 @@ public sealed class Main : IPlugin
                 Title = mode == "all" ? "Frage an alle drei eingeben" : $"Frage an {Labels[mode]} eingeben",
                 SubTitle = "Tippen startet noch keine Anfrage.",
                 Score = ResultScore,
-                IcoPath = "Images/icon.png"
+                IcoPath = mode == "all" ? "Images/icon.png" : ProviderIcon(mode)
             }];
         }
 
@@ -56,18 +56,18 @@ public sealed class Main : IPlugin
 
     static List<Result> ModeChoices() =>
     [
-        Choice("Gemini", "@gemini deine Frage"),
-        Choice("Claude", "@claude deine Frage"),
-        Choice("Codex", "@codex deine Frage"),
-        Choice("Alle drei parallel", "@ all deine Frage")
+        Choice("Gemini", "@gemini deine Frage", "gemini"),
+        Choice("Claude", "@claude deine Frage", "claude"),
+        Choice("Codex", "@codex deine Frage", "codex"),
+        Choice("Alle drei parallel", "@ all deine Frage", null)
     ];
 
-    static Result Choice(string title, string example) => new()
+    static Result Choice(string title, string example, string? provider) => new()
     {
         Title = title,
         SubTitle = example,
         Score = ResultScore,
-        IcoPath = "Images/icon.png"
+        IcoPath = provider is null ? "Images/icon.png" : ProviderIcon(provider)
     };
 
     Result CreateSendResult(string key, string mode, string prompt, string rawQuery) => new()
@@ -75,7 +75,7 @@ public sealed class Main : IPlugin
         Title = mode == "all" ? "An alle drei senden" : $"An {Labels[mode]} senden",
         SubTitle = prompt,
         Score = ResultScore,
-        IcoPath = "Images/icon.png",
+        IcoPath = mode == "all" ? "Images/icon.png" : ProviderIcon(mode),
         Action = _ =>
         {
             StartRequest(key, mode, prompt, rawQuery);
@@ -165,7 +165,7 @@ public sealed class Main : IPlugin
                 : text,
             Score = ResultScore,
             ToolTipData = string.IsNullOrWhiteSpace(text) ? null : new ToolTipData(label, text),
-            IcoPath = "Images/icon.png",
+            IcoPath = ProviderIcon(snapshot.Provider),
             Action = snapshot.Status == ProviderStatus.Succeeded ? _ =>
             {
                 try { Clipboard.SetText(text); } catch { }
@@ -181,6 +181,7 @@ public sealed class Main : IPlugin
     }
 
     static string CommandPrefix(string mode) => mode == "all" ? "@ all " : $"@{mode} ";
+    static string ProviderIcon(string provider) => $"Images/{provider}.png";
 
     void StartRequest(string key, string mode, string prompt, string rawQuery)
     {
