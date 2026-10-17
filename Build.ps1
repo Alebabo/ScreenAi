@@ -42,6 +42,10 @@ if ($Install) {
             $pluginSettings.ActionKeyword = '@'
             $pluginSettings.IsGlobal = $false
             $pluginSettings.Disabled = $false
+            $powerToysPluginSettings = $settings.plugins | Where-Object { $_.Id -eq '29DD65DB28C84A37BDEF1D2B43DA368B' } | Select-Object -First 1
+            if ($powerToysPluginSettings -and $powerToysPluginSettings.ActionKeyword -eq '@') {
+                $powerToysPluginSettings.ActionKeyword = 'pt'
+            }
             $settingsJson = $settings | ConvertTo-Json -Depth 100 -Compress
             [IO.File]::WriteAllText($settingsPath, $settingsJson, [Text.UTF8Encoding]::new($false))
         }

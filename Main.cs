@@ -10,6 +10,7 @@ namespace Community.PowerToys.Run.Plugin.AIHub;
 
 public sealed class Main : IPlugin
 {
+    const int ResultScore = 1_000_000;
     static readonly string[] AllProviders = ["gemini", "claude", "codex"];
     static readonly Dictionary<string, string> Labels = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -41,6 +42,7 @@ public sealed class Main : IPlugin
             {
                 Title = mode == "all" ? "Frage an alle drei eingeben" : $"Frage an {Labels[mode]} eingeben",
                 SubTitle = "Tippen startet noch keine Anfrage.",
+                Score = ResultScore,
                 IcoPath = "Images/icon.png"
             }];
         }
@@ -64,6 +66,7 @@ public sealed class Main : IPlugin
     {
         Title = title,
         SubTitle = example,
+        Score = ResultScore,
         IcoPath = "Images/icon.png"
     };
 
@@ -71,6 +74,7 @@ public sealed class Main : IPlugin
     {
         Title = mode == "all" ? "An alle drei senden" : $"An {Labels[mode]} senden",
         SubTitle = prompt,
+        Score = ResultScore,
         IcoPath = "Images/icon.png",
         Action = _ =>
         {
@@ -99,6 +103,7 @@ public sealed class Main : IPlugin
             {
                 Title = "Abbrechen",
                 SubTitle = "Beendet alle laufenden Anbieter dieser Anfrage.",
+                Score = ResultScore,
                 IcoPath = "Images/icon.png",
                 Action = _ =>
                 {
@@ -113,6 +118,7 @@ public sealed class Main : IPlugin
             {
                 Title = "Neue Frage eingeben",
                 SubTitle = "Die abgebrochene Anfrage wird nicht als Kontext übernommen.",
+                Score = ResultScore,
                 IcoPath = "Images/icon.png",
                 Action = _ =>
                 {
@@ -127,6 +133,7 @@ public sealed class Main : IPlugin
             {
                 Title = state.Mode == "all" ? "Gemeinsame Rückfrage stellen" : $"Rückfrage an {Labels[state.Mode]} stellen",
                 SubTitle = "Übernimmt den bisherigen Gesprächskontext.",
+                Score = ResultScore,
                 IcoPath = "Images/icon.png",
                 Action = _ =>
                 {
@@ -156,6 +163,7 @@ public sealed class Main : IPlugin
             SubTitle = snapshot.Status == ProviderStatus.Succeeded
                 ? "Enter kopiert die vollständige Antwort. Darüberfahren zeigt den Volltext."
                 : text,
+            Score = ResultScore,
             ToolTipData = string.IsNullOrWhiteSpace(text) ? null : new ToolTipData(label, text),
             IcoPath = "Images/icon.png",
             Action = snapshot.Status == ProviderStatus.Succeeded ? _ =>

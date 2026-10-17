@@ -19,9 +19,9 @@ internal static class Program
         for (var index = 0; index < 1000; index++)
         {
             var results = plugin.Query(new Query($"@gemini Nur tippen {index} ÄÖÜ", "@"));
-            if (results.Count != 1 || results[0].Action is null)
+            if (results.Count != 1 || results[0].Action is null || results[0].Score < 1_000_000)
             {
-                throw new InvalidOperationException("Gültige Eingabe erzeugt kein startbares Ergebnis.");
+                throw new InvalidOperationException("Gültige Eingabe erzeugt kein sichtbares, startbares Ergebnis.");
             }
         }
 
