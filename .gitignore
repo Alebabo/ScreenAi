@@ -1,0 +1,9 @@
+.vs/
+bin/
+obj/
+build/
+**/bin/
+**/obj/
+*.suo
+*.user
+*.zip

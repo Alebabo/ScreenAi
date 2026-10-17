@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows10.0.22621.0</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <PlatformTarget>x64</PlatformTarget>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PowerToysDir Condition="'$(PowerToysDir)' == ''">$(LOCALAPPDATA)\PowerToys</PowerToysDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\Main.cs" Link="Main.cs" />
+    <Reference Include="Wox.Plugin"><HintPath>$(PowerToysDir)\Wox.Plugin.dll</HintPath><Private>true</Private></Reference>
+    <None Include="..\..\bridge.mjs" Link="bridge.mjs" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
