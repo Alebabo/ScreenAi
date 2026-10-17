@@ -1,6 +1,6 @@
 # AI Hub für PowerToys Run
 
-PowerToys-Run-Plugin für Gemini über Antigravity CLI, Claude Code und Codex CLI. Version 0.5.2 zeigt Status und Antworten direkt unter der PowerToys-Eingabe. Es öffnet kein separates Chatfenster.
+PowerToys-Run-Plugin für Gemini über Antigravity CLI, Claude Code und Codex CLI. Version 0.6.0 zeigt Status und Antworten direkt unter der PowerToys-Eingabe. Es öffnet kein separates Chatfenster.
 
 Die vorhandenen Konto-Anmeldungen der lokalen CLIs werden verwendet. Das Plugin benötigt keine eigenen API-Schlüssel und wechselt nicht automatisch auf API-Abrechnung.
 
@@ -14,7 +14,7 @@ Die vorhandenen Konto-Anmeldungen der lokalen CLIs werden verwendet. Das Plugin 
 - Claude Code: `2.1.302`
 - Codex CLI: `0.150.1`
 - Installation: `%LOCALAPPDATA%\Microsoft\PowerToys\PowerToys Run\Plugins\AIHub`
-- PowerToys: AI Hub `0.5.2.0`, aktiviert, erfolgreich geladen
+- PowerToys: AI Hub `0.6.0.0`, aktiviert, erfolgreich geladen
 
 Erfolgreich geprüft:
 
@@ -26,6 +26,8 @@ Erfolgreich geprüft:
 - Unicode, Textkontext für Rückfragen und Beenden ganzer Prozessbäume sind implementiert.
 
 Die PowerToys-Oberfläche konnte in der Automationssitzung nicht visuell angeklickt werden. PowerToys hat die installierte DLL jedoch geladen; der komplette Inline-Ablauf wurde mit der echten Plugin-API-Oberfläche und echten Modellaufrufen ausgeführt.
+
+Alle drei Anbieter erhalten denselben eingebetteten Caveman-Ultra-Stilprompt. Standard sind ein bis zwei kurze Sätze oder Fragmente mit höchstens 35 Wörtern. Längere Antworten bleiben möglich, wenn die Frage ausdrücklich Details verlangt oder Korrektheit beziehungsweise Sicherheit mehr Text erfordert. Der Stilprompt benötigt keinen installierten externen Skill.
 
 ## Bedienung
 

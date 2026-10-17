@@ -3,10 +3,12 @@ import { existsSync, readFileSync, mkdirSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+export const SYSTEM_PROMPT = `Antworte im Caveman-Ultra-Stil und in der Sprache der Nutzerfrage. Standard: 1–2 kurze Sätze oder Fragmente, höchstens 35 Wörter. Überschreite das nur, wenn der Nutzer ausdrücklich Details verlangt oder Korrektheit beziehungsweise Sicherheit mehr Text erfordert. Gib ausschließlich die direkte Antwort, notwendige Fakten, Befehle oder Code aus. Keine Begrüßung, Einleitung, Höflichkeitsfloskeln, Beispiele ohne Nachfrage, Wiederholung, Zusammenfassung oder Abschlussformel. Bewahre Zahlen, Bedingungen und Verneinungen exakt. Verändere keine Dateien und führe keine Befehle aus.`;
+
 export function argumentsFor(provider) {
   switch (provider) {
     case 'gemini': return ['--input-format', 'stream-json', '--output-format', 'stream-json', '--mode', 'plan', '--sandbox', '--print-timeout', '180s'];
-    case 'claude': return ['--print', '--output-format', 'json', '--tools', '', '--disallowedTools', 'mcp__*', '--strict-mcp-config', '--setting-sources', '', '--no-session-persistence', '--no-chrome', '--permission-prompts', 'none'];
+    case 'claude': return ['--print', '--output-format', 'json', '--append-system-prompt', SYSTEM_PROMPT, '--tools', '', '--disallowedTools', 'mcp__*', '--strict-mcp-config', '--setting-sources', '', '--no-session-persistence', '--no-chrome', '--permission-prompts', 'none'];
     case 'codex': return ['exec', '--ignore-user-config', '--skip-git-repo-check', '--sandbox', 'read-only', '--ephemeral', '--json', '-'];
     default: throw new Error('Unbekannter Anbieter.');
   }
@@ -44,6 +46,11 @@ export function summarizeCliFailure(stderr, stdout, code) {
   const preferred = lines.find(line => /^(Error authenticating:|Error:|Failed to |Not logged in)/i.test(line));
   return (preferred || lines.find(line => !/^Warning:/i.test(line)) || `CLI beendet (${code}). Bitte Anmeldung im Terminal prüfen.`)
     .replace(/^Error authenticating:\s*/i, '');
+}
+export function buildPrompt(question, history = []) {
+  return `SYSTEMANWEISUNG (höchste Priorität):\n${SYSTEM_PROMPT}\n\n` +
+    history.slice(-12).map(m => `${m.role}: ${m.text}`).join('\n') +
+    `\nuser: ${question}`;
 }
 function executable(provider) {
   const names = { claude: '@anthropic-ai/claude-code', codex: '@openai/codex' };
@@ -136,9 +143,8 @@ async function assertSubscriptionAuth(provider, command, prefix, cwd, env) {
 export async function run(request) {
   const args = argumentsFor(request.provider);
   if (typeof request.prompt !== 'string' || !request.prompt.trim()) throw new Error('Frage fehlt.');
-  const history = Array.isArray(request.history) ? request.history.slice(-12) : [];
-  const prompt = 'Antworte direkt auf die Nutzerfrage. Keine Dateien verändern oder Befehle ausführen.\n' +
-    history.map(m => `${m.role}: ${m.text}`).join('\n') + '\nuser: ' + request.prompt;
+  const history = Array.isArray(request.history) ? request.history : [];
+  const prompt = buildPrompt(request.prompt, history);
   if (prompt.length > 100000) throw new Error('Gespräch zu lang. Bitte ein neues Fenster öffnen.');
   const [command, prefix] = executable(request.provider);
   const cwd = path.join(process.env.LOCALAPPDATA || process.cwd(), 'AIHub', 'Workspace');

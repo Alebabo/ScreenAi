@@ -4,7 +4,7 @@
   "IsGlobal": false,
   "Name": "AI Hub",
   "Author": "Alessandro Bonanno",
-  "Version": "0.5.2",
+  "Version": "0.6.0",
   "Language": "csharp",
   "Website": "https://learn.microsoft.com/windows/powertoys/run",
   "Description": "Gemini, Claude und Codex direkt in PowerToys Run, einzeln oder parallel",

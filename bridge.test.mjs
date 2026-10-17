@@ -1,11 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { argumentsFor, cleanEnvironment, parseAnswer, summarizeCliFailure } from './bridge.mjs';
+import { SYSTEM_PROMPT, argumentsFor, buildPrompt, cleanEnvironment, parseAnswer, summarizeCliFailure } from './bridge.mjs';
 test('all providers use noninteractive modes and reject unknown providers', () => {
   assert.ok(argumentsFor('gemini').includes('stream-json'));
   assert.ok(argumentsFor('gemini').includes('plan'));
   assert.ok(argumentsFor('gemini').includes('--sandbox'));
   assert.ok(argumentsFor('claude').includes('--print'));
+  assert.ok(argumentsFor('claude').includes('--append-system-prompt'));
   assert.ok(argumentsFor('codex').includes('read-only'));
   assert.throws(() => argumentsFor('invalid'));
 });
@@ -31,4 +32,13 @@ test('provider errors do not become successful answers', () => {
   assert.throws(() => parseAnswer('codex', '{"type":"turn.failed","error":{"message":"Limit"}}'), /Limit/);
   const geminiError = "Warning: TERM=dumb\nreasonMessage: 'Dieses Konto ist nicht berechtigt'\n    at internal";
   assert.equal(summarizeCliFailure(geminiError, '', 1), 'Dieses Konto ist nicht berechtigt');
+});
+test('all requests receive the compact Caveman system prompt and bounded history', () => {
+  const history = Array.from({ length: 20 }, (_, index) => ({ role: 'user', text: `Nachricht ${index}` }));
+  const prompt = buildPrompt('Erkläre DNS', history);
+  assert.match(SYSTEM_PROMPT, /Caveman-Ultra/);
+  assert.match(prompt, /höchstens 35 Wörter/);
+  assert.doesNotMatch(prompt, /Nachricht 7/);
+  assert.match(prompt, /Nachricht 8/);
+  assert.match(prompt, /user: Erkläre DNS/);
 });
